@@ -1,101 +1,103 @@
 # KipuBank Console
 
-A Next.js dApp for interacting with **KipuBankV3** on Sepolia. Deposit ETH or ERC-20 tokens (swapped to USDC via Uniswap V2), view vault stats, and withdraw USDC — all client-side with MetaMask.
+Frontend for **[KipuBankV3](https://github.com/DiegoNG90/KipuBankV3)** on Ethereum Sepolia.
+
+Connect MetaMask, deposit ETH or ERC-20 tokens, and withdraw USDC. There is no backend: the browser talks to the chain through wagmi/viem.
+
+The smart contract, Foundry tests, deploy script, and security notes live in the contract repo:
+
+**https://github.com/DiegoNG90/KipuBankV3**
+
+Read that README for `BANKCAP`, slippage, Uniswap V2 paths, and constructor checks. This repo only covers running the UI.
+
+## How it works
+
+KipuBankV3 is a vault: everything becomes USDC.
+
+1. `depositEther()` — native ETH is swapped to USDC via Uniswap V2 (`WETH → USDC`).
+2. `depositToken()` — USDC is credited as-is; other ERC-20s are swapped (`Token → WETH → USDC`).
+3. `withdrawToken()` — withdrawals are USDC only, with a per-transaction cap.
+
+Internal balances are always `balances[user][USDC]`.
+
+## Live Sepolia deployment
+
+| | |
+| --- | --- |
+| KipuBankV3 | [`0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca`](https://sepolia.etherscan.io/address/0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca) |
+| Circle USDC | [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/token/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238) |
+| Uniswap V2 Router | `0xeE567Fe1712Faf6149d80dA1E6934E354124CfE3` |
+| WETH | `0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14` |
+
+Do **not** use `0x078dEbfbFC8C2764c561Bd636D833Cc569FDb3B2`. That instance was deployed with a wrong USDC address and every deposit reverts.
+
+## Prerequisites
+
+- Node.js 20+
+- npm
+- [MetaMask](https://metamask.io/) in **Chrome, Brave, or Firefox** (the Cursor/VS Code preview has no extensions)
+- Sepolia ETH for gas ([Alchemy faucet](https://www.alchemy.com/faucets/ethereum-sepolia) or [Google Cloud faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia))
+- Optional Sepolia USDC from [Circle’s faucet](https://faucet.circle.com/) (network: Ethereum Sepolia)
+
+## Run locally
+
+```bash
+git clone https://github.com/DiegoNG90/Kipubank-dapp.git
+cd Kipubank-dapp
+npm install
+cp .env.example .env.local
+```
+
+On Windows PowerShell use `copy .env.example .env.local`.
+
+`.env.example` already points at the live contract. `.env.local` is gitignored — never commit it. You can swap the RPC for Alchemy/Infura if PublicNode is slow:
+
+```env
+NEXT_PUBLIC_KIPUBANK_ADDRESS=0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+```
+
+Avoid `https://rpc.sepolia.org` from the browser; it often fails with `Failed to fetch`. The app also falls back to PublicNode if your env RPC dies.
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000), connect MetaMask, switch to Sepolia if asked, then deposit or withdraw.
+
+```bash
+npm run lint
+npm run build
+```
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| `Provider not found` | Open the app in a browser with MetaMask installed and unlocked |
+| `Failed to fetch` / `eth_call` HTTP error | Change `NEXT_PUBLIC_SEPOLIA_RPC_URL` and restart `npm run dev` |
+| Wrong network banner | Use the in-app switch to Sepolia (chain id `11155111`) |
+| Deposit reverts | Confirm `NEXT_PUBLIC_KIPUBANK_ADDRESS` is the live address above, not the broken one |
 
 ## Stack
 
-- Next.js 16 (App Router) + TypeScript
+- Next.js (App Router) + TypeScript
 - wagmi v2 + viem + TanStack Query
 - Tailwind CSS 4
-- MetaMask only · Sepolia (chain ID `11155111`)
-
-## Setup
-
-1. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-2. **Configure environment**
-
-   Copy `.env.example` to `.env.local` and set your deployed contract address:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   ```env
-   NEXT_PUBLIC_KIPUBANK_ADDRESS=0xYourDeployedKipuBankV3Address
-   NEXT_PUBLIC_SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
-   ```
-
-   > **Important:** Do not use the broken old deploy at `0x078dEbfbFC8C2764c561Bd636D833Cc569FDb3B2`. Deploy a fresh KipuBankV3 from the contract repo.
-
-3. **Run locally**
-
-   ```bash
-   npm run dev
-   ```
-
-   Open [http://localhost:3000](http://localhost:3000).
-
-## Sepolia test assets
-
-| Asset | Faucet |
-|-------|--------|
-| Sepolia ETH | [Alchemy Sepolia Faucet](https://www.alchemy.com/faucets/ethereum-sepolia), [Google Cloud Sepolia Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) |
-| Sepolia USDC | [Circle Faucet](https://faucet.circle.com/) — select **Ethereum Sepolia** |
-
-## Contract constants (Sepolia)
-
-| Parameter | Address |
-|-----------|---------|
-| Uniswap V2 Router | `0xeE567Fe1712Faf6149d80dA1E6934E354124CfE3` |
-| WETH | `0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14` |
-| USDC | `0x1c7D4B196Cb0C7B01D743Fbc6116a902379C7238` (6 decimals) |
-
-## Features
-
-- **Wallet** — MetaMask connect/disconnect with Sepolia network guard and one-click switch
-- **Bank panel** — TVL, BANKCAP capacity bar, deposit/withdraw counters, slippage & max withdrawal limits, user USDC balance
-- **Deposit ETH** — debounced Uniswap quote, min-out preview using on-chain `SLIPPAGE_TOLERANCE_BPS`, `simulateContract` before write
-- **Deposit ERC-20** — allowance check + approve flow; USDC direct deposit or swap path for other tokens
-- **Withdraw USDC** — client-side balance & per-tx cap validation, simulation, Etherscan tx links
-- **Errors** — custom KipuBank revert reasons decoded to human-readable messages
-
-## Scripts
-
-```bash
-npm run dev      # development server
-npm run build    # production build
-npm run lint     # ESLint
-npm run start    # serve production build
-```
+- MetaMask (injected connector) · Sepolia
 
 ## Project structure
 
 ```
 src/
-├── app/                 # Next.js App Router (layout, page, globals)
-├── components/
-│   ├── ui/              # Hand-written shadcn-style primitives
-│   ├── bank-panel.tsx
-│   ├── connect-wallet.tsx
-│   ├── deposit-eth.tsx
-│   ├── deposit-token.tsx
-│   ├── kipubank-console.tsx
-│   ├── network-guard.tsx
-│   ├── providers.tsx
-│   ├── tx-status.tsx
-│   └── withdraw-usdc.tsx
-├── config/wagmi.ts      # wagmi + MetaMask injected connector
-├── hooks/               # bank stats, debounce helpers
+├── app/                 # App Router (layout, page, globals)
+├── components/          # Wallet, bank panel, deposit, withdraw
+├── config/wagmi.ts      # Injected connector + RPC fallbacks
+├── hooks/               # Bank stats and debounce
 └── lib/
-    ├── abis/            # typed const ABIs
-    ├── constants.ts
-    ├── errors.ts        # custom error decoder
-    └── utils.ts
+    ├── abis/            # KipuBank, ERC-20, Uniswap V2 router
+    ├── constants.ts     # Sepolia addresses (contract from env)
+    └── errors.ts        # Custom revert decoder
 ```
 
 ## License
