@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectWallet } from "@/components/connect-wallet";
 import { METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
+import { setEthereum } from "@/test/ethereum";
 
 const connect = vi.fn();
 const disconnect = vi.fn();
@@ -27,14 +28,6 @@ vi.mock("wagmi", () => ({
   }),
   useDisconnect: () => ({ disconnect }),
 }));
-
-function setEthereum(value: unknown) {
-  Object.defineProperty(window, "ethereum", {
-    value,
-    writable: true,
-    configurable: true,
-  });
-}
 
 describe("ConnectWallet", () => {
   beforeEach(() => {

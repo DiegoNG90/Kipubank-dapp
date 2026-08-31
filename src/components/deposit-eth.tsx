@@ -31,10 +31,8 @@ import {
   SEPOLIA_WETH,
 } from "@/lib/constants";
 import { useBankStats } from "@/hooks/use-kipubank";
-import {
-  useDebouncedValue,
-  calculateMinOut,
-} from "@/hooks/use-debounce";
+import { useDebouncedValue } from "@/hooks/use-debounce";
+import { calculateMinOut } from "@/lib/swap";
 import { decodeKipuBankError } from "@/lib/errors";
 import { formatUsd } from "@/lib/utils";
 import { ZERO } from "@/lib/bigint";

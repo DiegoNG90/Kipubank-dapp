@@ -6,6 +6,7 @@ import {
   useChainId,
 } from "wagmi";
 import { kipuBankAbi } from "@/lib/abis/kipubank";
+import { mapBankStats } from "@/lib/bank-stats";
 import { getKipuBankAddress, SEPOLIA_CHAIN_ID } from "@/lib/constants";
 
 export function useKipuBankAddress() {
@@ -66,7 +67,7 @@ export function useUserUsdcBalance() {
   const { address: userAddress } = useAccount();
 
   const bankStats = useBankStats();
-  const usdcAddress = bankStats.data?.[6]?.result as `0x${string}` | undefined;
+  const usdcAddress = mapBankStats(bankStats.data).usdc;
 
   return useReadContracts({
     contracts:

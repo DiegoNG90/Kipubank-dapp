@@ -5,22 +5,15 @@ import {
   isMetaMaskInstalled,
   METAMASK_DOWNLOAD_URL,
 } from "@/lib/metamask";
-
-function setEthereum(value: unknown) {
-  Object.defineProperty(window, "ethereum", {
-    value,
-    writable: true,
-    configurable: true,
-  });
-}
+import { clearEthereum, setEthereum } from "@/test/ethereum";
 
 describe("isMetaMaskInstalled", () => {
   afterEach(() => {
-    delete (window as Window & { ethereum?: unknown }).ethereum;
+    clearEthereum();
   });
 
   it("returns false when no injected provider exists", () => {
-    delete (window as Window & { ethereum?: unknown }).ethereum;
+    clearEthereum();
     expect(isMetaMaskInstalled()).toBe(false);
   });
 
@@ -45,7 +38,7 @@ describe("isMetaMaskInstalled", () => {
 
 describe("canOpenWallet", () => {
   afterEach(() => {
-    delete (window as Window & { ethereum?: unknown }).ethereum;
+    clearEthereum();
   });
 
   it("returns true when any injected provider exists, including Brave", async () => {

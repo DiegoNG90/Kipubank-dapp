@@ -14,8 +14,12 @@ import {
   useUserUsdcBalance,
   useIsConfigured,
 } from "@/hooks/use-kipubank";
+import {
+  calculateCapacityPct,
+  mapBankStats,
+} from "@/lib/bank-stats";
 import { formatUsd } from "@/lib/utils";
-import { ZERO, BPS_BASE } from "@/lib/bigint";
+import { ZERO } from "@/lib/bigint";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Building2, Loader2 } from "lucide-react";
 
@@ -47,17 +51,16 @@ export function BankPanel() {
     );
   }
 
-  const bankCap = bankStats.data?.[0]?.result as bigint | undefined;
-  const totalDeposits = bankStats.data?.[1]?.result as bigint | undefined;
-  const depositOps = bankStats.data?.[2]?.result as bigint | undefined;
-  const withdrawOps = bankStats.data?.[3]?.result as bigint | undefined;
-  const maxWithdrawal = bankStats.data?.[4]?.result as bigint | undefined;
-  const slippageBps = bankStats.data?.[5]?.result as bigint | undefined;
+  const {
+    bankCap,
+    totalDeposits,
+    depositOps,
+    withdrawOps,
+    maxWithdrawal,
+    slippageBps,
+  } = mapBankStats(bankStats.data);
 
-  const capacityPct =
-    bankCap && totalDeposits !== undefined && bankCap > ZERO
-      ? Number((totalDeposits * BPS_BASE) / bankCap) / 100
-      : 0;
+  const capacityPct = calculateCapacityPct(bankCap, totalDeposits);
 
   const userUsdc = userBalance.data?.[0]?.result as bigint | undefined;
 
