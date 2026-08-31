@@ -1,20 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { Wallet, LogOut } from "lucide-react";
+import { ExternalLink, LogOut, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { isMetaMaskInstalled, METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
 import { truncateAddress } from "@/lib/utils";
 
-function hasInjectedProvider() {
-  return typeof window !== "undefined" && Boolean(window.ethereum);
-}
-
 function providerHint(message: string | undefined) {
-  if (!hasInjectedProvider()) {
-    return "MetaMask no está inyectado en este navegador. Abrí localhost en Chrome/Brave/Firefox con la extensión instalada y desbloqueada (el preview de Cursor no tiene extensiones).";
-  }
   if (message?.toLowerCase().includes("provider not found")) {
-    return "wagmi no encontró un provider. Probá recargar la página con MetaMask desbloqueado, o desactivá otras wallets que pisen window.ethereum.";
+    return "No se encontró un provider. Recargá la página con MetaMask desbloqueada.";
   }
   return message;
 }
@@ -23,11 +19,20 @@ export function ConnectWallet() {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
+  const [installOpen, setInstallOpen] = useState(false);
 
   const connector =
     connectors.find((item) => item.id === "metaMask") ??
     connectors.find((item) => item.id === "injected") ??
     connectors[0];
+
+  function handleConnect() {
+    if (!isMetaMaskInstalled()) {
+      setInstallOpen(true);
+      return;
+    }
+    if (connector) connect({ connector });
+  }
 
   if (isConnected && address) {
     return (
@@ -44,21 +49,41 @@ export function ConnectWallet() {
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <Button
-        onClick={() => {
-          if (connector) connect({ connector });
-        }}
-        disabled={isPending || !connector}
+    <>
+      <div className="flex flex-col items-end gap-2">
+        <Button onClick={handleConnect} disabled={isPending}>
+          <Wallet className="h-4 w-4" />
+          {isPending ? "Connecting…" : "Connect MetaMask"}
+        </Button>
+        {error && (
+          <p className="max-w-xs text-right text-xs text-red-400">
+            {providerHint(error.message)}
+          </p>
+        )}
+      </div>
+
+      <Modal
+        open={installOpen}
+        title="MetaMask no está instalada"
+        onClose={() => setInstallOpen(false)}
       >
-        <Wallet className="h-4 w-4" />
-        {isPending ? "Connecting…" : "Connect MetaMask"}
-      </Button>
-      {error && (
-        <p className="max-w-xs text-right text-xs text-red-400">
-          {providerHint(error.message)}
+        <p className="text-sm leading-relaxed text-zinc-400">
+          Para conectar tu wallet necesitás la extensión de MetaMask en este
+          navegador. Podés descargarla desde el sitio oficial:
         </p>
-      )}
-    </div>
+        <a
+          href={METAMASK_DOWNLOAD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-emerald-900/20 transition-colors hover:bg-emerald-500"
+        >
+          Descargar MetaMask
+          <ExternalLink className="h-4 w-4" />
+        </a>
+        <p className="mt-3 text-xs text-zinc-500">
+          Después de instalarla, recargá esta página y volvé a conectar.
+        </p>
+      </Modal>
+    </>
   );
 }
