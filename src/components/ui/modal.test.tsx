@@ -13,13 +13,15 @@ describe("Modal", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("renders title and children when open", () => {
-    render(
+  it("renders title and children on document.body when open", () => {
+    const { container } = render(
       <Modal open title="Install wallet" onClose={vi.fn()}>
         Download it first
       </Modal>,
     );
+    expect(container).toBeEmptyDOMElement();
     expect(screen.getByRole("dialog", { name: "Install wallet" })).toBeInTheDocument();
+    expect(document.body.contains(screen.getByRole("dialog"))).toBe(true);
     expect(screen.getByText("Download it first")).toBeInTheDocument();
   });
 

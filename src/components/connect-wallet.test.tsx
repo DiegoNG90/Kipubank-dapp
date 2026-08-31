@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectWallet } from "@/components/connect-wallet";
@@ -55,7 +55,7 @@ describe("ConnectWallet", () => {
 
     expect(connect).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("dialog", { name: "MetaMask no está instalada" }),
+      await screen.findByRole("dialog", { name: "MetaMask no está instalada" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /descargar metamask/i })).toHaveAttribute(
       "href",
@@ -70,7 +70,22 @@ describe("ConnectWallet", () => {
 
     await user.click(screen.getByRole("button", { name: /connect metamask/i }));
 
-    expect(connect).toHaveBeenCalledWith({ connector: { id: "injected" } });
+    await waitFor(() => {
+      expect(connect).toHaveBeenCalledWith({ connector: { id: "injected" } });
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("connects when a wallet is injected even if it is not flagged as MetaMask", async () => {
+    const user = userEvent.setup();
+    setEthereum({ isMetaMask: true, isBraveWallet: true });
+    render(<ConnectWallet />);
+
+    await user.click(screen.getByRole("button", { name: /connect metamask/i }));
+
+    await waitFor(() => {
+      expect(connect).toHaveBeenCalled();
+    });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
