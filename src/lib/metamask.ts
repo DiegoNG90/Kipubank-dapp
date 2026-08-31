@@ -1,14 +1,19 @@
 export const METAMASK_DOWNLOAD_URL = "https://metamask.io/es/download";
 
+const METAMASK_RDNS = new Set(["io.metamask", "io.metamask.flask"]);
+
 type InjectedEthereum = {
   isMetaMask?: boolean;
   isBraveWallet?: boolean;
   providers?: InjectedEthereum[];
 };
 
+type Eip6963AnnounceDetail = {
+  info?: { rdns?: string };
+};
+
 function isMetaMaskProvider(provider: InjectedEthereum | undefined) {
   if (!provider) return false;
-  // Brave can advertise isMetaMask; exclude it so we don't skip the install modal.
   return Boolean(provider.isMetaMask) && !provider.isBraveWallet;
 }
 
@@ -20,4 +25,39 @@ export function isMetaMaskInstalled(): boolean {
 
   if (isMetaMaskProvider(ethereum)) return true;
   return ethereum.providers?.some(isMetaMaskProvider) ?? false;
+}
+
+export function hasInjectedProvider(): boolean {
+  return typeof window !== "undefined" && Boolean(window.ethereum);
+}
+
+export function discoverMetaMaskEip6963(timeoutMs = 200): Promise<boolean> {
+  if (typeof window === "undefined") return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (found: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("eip6963:announceProvider", onAnnounce);
+      resolve(found);
+    };
+
+    const onAnnounce = (event: Event) => {
+      const rdns = (event as CustomEvent<Eip6963AnnounceDetail>).detail?.info
+        ?.rdns;
+      if (rdns && METAMASK_RDNS.has(rdns)) finish(true);
+    };
+
+    window.addEventListener("eip6963:announceProvider", onAnnounce);
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+    window.setTimeout(() => finish(false), timeoutMs);
+  });
+}
+
+/** True when a wallet popup can be opened (injected provider or EIP-6963 MetaMask). */
+export async function canOpenWallet(): Promise<boolean> {
+  if (isMetaMaskInstalled() || hasInjectedProvider()) return true;
+  return discoverMetaMaskEip6963();
 }

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { isMetaMaskInstalled, METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
+import {
+  canOpenWallet,
+  discoverMetaMaskEip6963,
+  isMetaMaskInstalled,
+  METAMASK_DOWNLOAD_URL,
+} from "@/lib/metamask";
 
 function setEthereum(value: unknown) {
   Object.defineProperty(window, "ethereum", {
@@ -35,6 +40,40 @@ describe("isMetaMaskInstalled", () => {
       providers: [{ isMetaMask: false }, { isMetaMask: true }],
     });
     expect(isMetaMaskInstalled()).toBe(true);
+  });
+});
+
+describe("canOpenWallet", () => {
+  afterEach(() => {
+    delete (window as Window & { ethereum?: unknown }).ethereum;
+  });
+
+  it("returns true when any injected provider exists, including Brave", async () => {
+    setEthereum({ isMetaMask: true, isBraveWallet: true });
+    await expect(canOpenWallet()).resolves.toBe(true);
+  });
+
+  it("returns true when MetaMask announces via EIP-6963 without window.ethereum", async () => {
+    const onRequest = () => {
+      window.dispatchEvent(
+        new CustomEvent("eip6963:announceProvider", {
+          detail: { info: { rdns: "io.metamask" } },
+        }),
+      );
+    };
+    window.addEventListener("eip6963:requestProvider", onRequest);
+    await expect(canOpenWallet()).resolves.toBe(true);
+    window.removeEventListener("eip6963:requestProvider", onRequest);
+  });
+
+  it("returns false when nothing is injected", async () => {
+    await expect(canOpenWallet()).resolves.toBe(false);
+  });
+});
+
+describe("discoverMetaMaskEip6963", () => {
+  it("returns false when no wallet announces", async () => {
+    await expect(discoverMetaMaskEip6963(20)).resolves.toBe(false);
   });
 });
 

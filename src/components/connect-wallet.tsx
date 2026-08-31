@@ -5,7 +5,7 @@ import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { ExternalLink, LogOut, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { isMetaMaskInstalled, METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
+import { canOpenWallet, METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
 import { truncateAddress } from "@/lib/utils";
 
 function providerHint(message: string | undefined) {
@@ -20,18 +20,24 @@ export function ConnectWallet() {
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
   const [installOpen, setInstallOpen] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
 
   const connector =
     connectors.find((item) => item.id === "metaMask") ??
     connectors.find((item) => item.id === "injected") ??
     connectors[0];
 
-  function handleConnect() {
-    if (!isMetaMaskInstalled()) {
-      setInstallOpen(true);
-      return;
+  async function handleConnect() {
+    setIsDetecting(true);
+    try {
+      if (!(await canOpenWallet())) {
+        setInstallOpen(true);
+        return;
+      }
+      if (connector) connect({ connector });
+    } finally {
+      setIsDetecting(false);
     }
-    if (connector) connect({ connector });
   }
 
   if (isConnected && address) {
@@ -48,12 +54,14 @@ export function ConnectWallet() {
     );
   }
 
+  const busy = isPending || isDetecting;
+
   return (
     <>
       <div className="flex flex-col items-end gap-2">
-        <Button onClick={handleConnect} disabled={isPending}>
+        <Button onClick={handleConnect} disabled={busy}>
           <Wallet className="h-4 w-4" />
-          {isPending ? "Connecting…" : "Connect MetaMask"}
+          {busy ? "Connecting…" : "Connect MetaMask"}
         </Button>
         {error && (
           <p className="max-w-xs text-right text-xs text-red-400">

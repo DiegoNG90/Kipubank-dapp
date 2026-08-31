@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,10 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <button
         type="button"
         aria-label="Cerrar diálogo"
@@ -46,7 +47,7 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl shadow-black/40",
+          "relative z-[101] w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl shadow-black/40",
           className,
         )}
       >
@@ -67,6 +68,7 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
         </div>
         <div className="px-5 py-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
