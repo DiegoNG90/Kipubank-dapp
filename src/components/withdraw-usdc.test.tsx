@@ -52,6 +52,7 @@ vi.mock("wagmi", async (importOriginal) => {
 vi.mock("@/hooks/use-kipubank", () => ({
   useBankStats: () => withdrawState.bankStats,
   useUserUsdcBalance: () => withdrawState.userBalance,
+  useIsSepolia: () => true,
 }));
 
 describe("WithdrawUsdc", () => {

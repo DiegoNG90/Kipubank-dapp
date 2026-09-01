@@ -14,6 +14,7 @@ import {
   useUserUsdcBalance,
   useIsConfigured,
 } from "@/hooks/use-kipubank";
+import { isExpectedKipuBankAddress } from "@/lib/constants";
 import {
   calculateCapacityPct,
   mapBankStats,
@@ -63,6 +64,7 @@ export function BankPanel() {
   const capacityPct = calculateCapacityPct(bankCap, totalDeposits);
 
   const userUsdc = userBalance.data?.[0]?.result as bigint | undefined;
+  const unexpectedContract = !isExpectedKipuBankAddress();
 
   return (
     <Card>
@@ -76,6 +78,17 @@ export function BankPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {unexpectedContract && (
+          <Alert variant="warning">
+            <AlertTitle>Unexpected contract address</AlertTitle>
+            <AlertDescription>
+              This UI is configured for a KipuBank address that is not the
+              known Sepolia deployment. Confirm{" "}
+              <code className="text-amber-200">NEXT_PUBLIC_KIPUBANK_ADDRESS</code>{" "}
+              before sending a transaction.
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Total Value Locked" value={`$${formatUsd(totalDeposits ?? ZERO)}`} />
           <Stat label="Bank Cap" value={`$${formatUsd(bankCap ?? ZERO)}`} />

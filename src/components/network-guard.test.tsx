@@ -42,7 +42,7 @@ describe("NetworkGuard", () => {
     expect(screen.queryByText("Wrong network")).not.toBeInTheDocument();
   });
 
-  it("warns and still renders children on the wrong chain", () => {
+  it("warns and hides bank actions on the wrong chain", () => {
     wagmiState.isConnected = true;
     wagmiState.chainId = 1;
 
@@ -54,7 +54,7 @@ describe("NetworkGuard", () => {
 
     expect(screen.getByText("Wrong network")).toBeInTheDocument();
     expect(screen.getByText(/You are on chain 1/i)).toBeInTheDocument();
-    expect(screen.getByText("Console content")).toBeInTheDocument();
+    expect(screen.queryByText("Console content")).not.toBeInTheDocument();
   });
 
   it("requests a switch to Sepolia from the warning banner", async () => {

@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getKipuBankAddress } from "@/lib/constants";
+import {
+  EXPECTED_KIPUBANK_ADDRESS,
+  getKipuBankAddress,
+  isExpectedKipuBankAddress,
+} from "@/lib/constants";
 
 describe("getKipuBankAddress", () => {
   afterEach(() => {
@@ -20,5 +24,24 @@ describe("getKipuBankAddress", () => {
     const address = "0x94880bC1361cd7723E55eE9c7bCce319fa2F93e4";
     vi.stubEnv("NEXT_PUBLIC_KIPUBANK_ADDRESS", address);
     expect(getKipuBankAddress()).toBe(address);
+  });
+});
+
+describe("isExpectedKipuBankAddress", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("accepts the known Sepolia deployment", () => {
+    vi.stubEnv("NEXT_PUBLIC_KIPUBANK_ADDRESS", EXPECTED_KIPUBANK_ADDRESS);
+    expect(isExpectedKipuBankAddress()).toBe(true);
+  });
+
+  it("rejects a different configured address", () => {
+    vi.stubEnv(
+      "NEXT_PUBLIC_KIPUBANK_ADDRESS",
+      "0x94880bC1361cd7723E55eE9c7bCce319fa2F93e4",
+    );
+    expect(isExpectedKipuBankAddress()).toBe(false);
   });
 });
