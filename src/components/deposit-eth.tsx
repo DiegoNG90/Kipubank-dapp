@@ -8,7 +8,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { parseUnits, formatUnits } from "viem";
+import { formatUnits } from "viem";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowDownToLine } from "lucide-react";
 import {
@@ -28,13 +28,13 @@ import {
   getKipuBankAddress,
   ETH_DECIMALS,
   USDC_DECIMALS,
-  SEPOLIA_WETH,
 } from "@/lib/constants";
 import { useBankStats } from "@/hooks/use-kipubank";
-import {
-  useDebouncedValue,
-  calculateMinOut,
-} from "@/hooks/use-debounce";
+import { mapBankStats } from "@/lib/bank-stats";
+import { useDebouncedValue } from "@/hooks/use-debounce";
+import { parseAmountInput } from "@/lib/amounts";
+import { buildEthSwapPath } from "@/lib/token-deposit";
+import { calculateMinOut } from "@/lib/swap";
 import { decodeKipuBankError } from "@/lib/errors";
 import { formatUsd } from "@/lib/utils";
 import { ZERO } from "@/lib/bigint";
@@ -48,22 +48,16 @@ export function DepositEth() {
   const [amount, setAmount] = useState("");
   const debouncedAmount = useDebouncedValue(amount);
 
-  const routerAddress = bankStats.data?.[7]?.result as `0x${string}` | undefined;
-  const slippageBps = bankStats.data?.[5]?.result as bigint | undefined;
+  const { router: routerAddress, slippageBps, usdc: usdcAddress } =
+    mapBankStats(bankStats.data);
 
-  const usdcAddress = bankStats.data?.[6]?.result as `0x${string}` | undefined;
-
-  const parsedValue = useMemo(() => {
-    try {
-      if (!debouncedAmount || Number(debouncedAmount) <= 0) return undefined;
-      return parseUnits(debouncedAmount, ETH_DECIMALS);
-    } catch {
-      return undefined;
-    }
-  }, [debouncedAmount]);
+  const parsedValue = useMemo(
+    () => parseAmountInput(debouncedAmount, ETH_DECIMALS),
+    [debouncedAmount],
+  );
 
   const swapPath = useMemo(
-    () => (usdcAddress ? ([SEPOLIA_WETH, usdcAddress] as const) : undefined),
+    () => (usdcAddress ? buildEthSwapPath(usdcAddress) : undefined),
     [usdcAddress],
   );
 

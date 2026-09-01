@@ -6,14 +6,8 @@ import { ExternalLink, LogOut, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { canOpenWallet, METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
+import { providerHint } from "@/lib/wallet-ui";
 import { truncateAddress } from "@/lib/utils";
-
-function providerHint(message: string | undefined) {
-  if (message?.toLowerCase().includes("provider not found")) {
-    return "No se encontró un provider. Recargá la página con MetaMask desbloqueada.";
-  }
-  return message;
-}
 
 export function ConnectWallet() {
   const { address, isConnected } = useAccount();

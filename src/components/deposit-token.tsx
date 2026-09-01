@@ -9,7 +9,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { parseUnits, isAddress } from "viem";
+import { isAddress } from "viem";
 import { useQueryClient } from "@tanstack/react-query";
 import { Coins } from "lucide-react";
 import {
@@ -30,13 +30,17 @@ import {
   getKipuBankAddress,
   SEPOLIA_USDC,
   USDC_DECIMALS,
-  SEPOLIA_WETH,
 } from "@/lib/constants";
 import { useBankStats } from "@/hooks/use-kipubank";
+import { mapBankStats } from "@/lib/bank-stats";
+import { useDebouncedValue } from "@/hooks/use-debounce";
+import { parseAmountInput } from "@/lib/amounts";
 import {
-  useDebouncedValue,
-  calculateMinOut,
-} from "@/hooks/use-debounce";
+  buildTokenSwapPath,
+  isUsdcToken,
+  needsTokenApproval,
+} from "@/lib/token-deposit";
+import { calculateMinOut } from "@/lib/swap";
 import { decodeKipuBankError } from "@/lib/errors";
 import { formatUsd } from "@/lib/utils";
 import { ZERO } from "@/lib/bigint";
@@ -54,14 +58,10 @@ export function DepositToken() {
   const [txStep, setTxStep] = useState<TxStep>("idle");
   const debouncedAmount = useDebouncedValue(amount);
 
-  const usdcFromContract = bankStats.data?.[6]?.result as `0x${string}` | undefined;
-  const routerAddress = bankStats.data?.[7]?.result as `0x${string}` | undefined;
-  const slippageBps = bankStats.data?.[5]?.result as bigint | undefined;
+  const { usdc: usdcFromContract, router: routerAddress, slippageBps } =
+    mapBankStats(bankStats.data);
 
-  const isUsdc =
-    tokenAddress.toLowerCase() === SEPOLIA_USDC.toLowerCase() ||
-    (usdcFromContract &&
-      tokenAddress.toLowerCase() === usdcFromContract.toLowerCase());
+  const isUsdc = isUsdcToken(tokenAddress, usdcFromContract);
 
   const tokenValid = isAddress(tokenAddress);
 
@@ -86,18 +86,17 @@ export function DepositToken() {
   const decimals = (tokenMeta?.[0]?.result as number | undefined) ?? USDC_DECIMALS;
   const symbol = (tokenMeta?.[1]?.result as string | undefined) ?? "TOKEN";
 
-  const parsedAmount = useMemo(() => {
-    try {
-      if (!debouncedAmount || Number(debouncedAmount) <= 0) return undefined;
-      return parseUnits(debouncedAmount, decimals);
-    } catch {
-      return undefined;
-    }
-  }, [debouncedAmount, decimals]);
+  const parsedAmount = useMemo(
+    () => parseAmountInput(debouncedAmount, decimals),
+    [debouncedAmount, decimals],
+  );
 
   const swapPath = useMemo(() => {
     if (!routerAddress || !usdcFromContract || isUsdc) return undefined;
-    return [tokenAddress as `0x${string}`, SEPOLIA_WETH, usdcFromContract] as const;
+    return buildTokenSwapPath(
+      tokenAddress as `0x${string}`,
+      usdcFromContract,
+    );
   }, [routerAddress, usdcFromContract, isUsdc, tokenAddress]);
 
   const { data: quoteData, isFetching: isQuoting } = useReadContract({
@@ -137,10 +136,7 @@ export function DepositToken() {
     },
   });
 
-  const needsApproval =
-    parsedAmount !== undefined &&
-    parsedAmount > ZERO &&
-    (allowance === undefined || allowance < parsedAmount);
+  const needsApproval = needsTokenApproval(parsedAmount, allowance);
 
   const {
     data: approveSim,

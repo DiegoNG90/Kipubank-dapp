@@ -5,7 +5,13 @@ import {
   useReadContracts,
   useChainId,
 } from "wagmi";
-import { kipuBankAbi } from "@/lib/abis/kipubank";
+import {
+  bankStatsContracts,
+  isBankStatsQueryEnabled,
+  isUserUsdcBalanceQueryEnabled,
+  userUsdcBalanceContracts,
+} from "@/lib/bank-contracts";
+import { mapBankStats } from "@/lib/bank-stats";
 import { getKipuBankAddress, SEPOLIA_CHAIN_ID } from "@/lib/constants";
 
 export function useKipuBankAddress() {
@@ -25,38 +31,9 @@ export function useBankStats() {
   const address = getKipuBankAddress();
 
   return useReadContracts({
-    contracts: address
-      ? [
-          { address, abi: kipuBankAbi, functionName: "BANKCAP" },
-          { address, abi: kipuBankAbi, functionName: "totalDepositsInUSD" },
-          {
-            address,
-            abi: kipuBankAbi,
-            functionName: "totalDepositOperations",
-          },
-          {
-            address,
-            abi: kipuBankAbi,
-            functionName: "totalWithdrawalsOperations",
-          },
-          {
-            address,
-            abi: kipuBankAbi,
-            functionName: "MAXIMUM_WITHDRAWAL_IN_USD",
-          },
-          {
-            address,
-            abi: kipuBankAbi,
-            functionName: "SLIPPAGE_TOLERANCE_BPS",
-          },
-          { address, abi: kipuBankAbi, functionName: "USDC" },
-          { address, abi: kipuBankAbi, functionName: "ROUTER" },
-          { address, abi: kipuBankAbi, functionName: "WETH" },
-          { address, abi: kipuBankAbi, functionName: "owner" },
-        ]
-      : [],
+    contracts: address ? bankStatsContracts(address) : [],
     query: {
-      enabled: !!address,
+      enabled: isBankStatsQueryEnabled(address),
     },
   });
 }
@@ -66,22 +43,15 @@ export function useUserUsdcBalance() {
   const { address: userAddress } = useAccount();
 
   const bankStats = useBankStats();
-  const usdcAddress = bankStats.data?.[6]?.result as `0x${string}` | undefined;
+  const usdcAddress = mapBankStats(bankStats.data).usdc;
 
   return useReadContracts({
     contracts:
       address && userAddress && usdcAddress
-        ? [
-            {
-              address,
-              abi: kipuBankAbi,
-              functionName: "balances",
-              args: [userAddress, usdcAddress],
-            },
-          ]
+        ? userUsdcBalanceContracts(address, userAddress, usdcAddress)
         : [],
     query: {
-      enabled: !!address && !!userAddress && !!usdcAddress,
+      enabled: isUserUsdcBalanceQueryEnabled(address, userAddress, usdcAddress),
     },
   });
 }

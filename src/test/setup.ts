@@ -1,8 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
+import { clearEthereum } from "@/test/ethereum";
 
 afterEach(() => {
   cleanup();
-  delete (window as Window & { ethereum?: unknown }).ethereum;
+  clearEthereum();
 });

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectWallet } from "@/components/connect-wallet";
 import { METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
+import { setEthereum } from "@/test/ethereum";
 
 const connect = vi.fn();
 const disconnect = vi.fn();
@@ -27,14 +28,6 @@ vi.mock("wagmi", () => ({
   }),
   useDisconnect: () => ({ disconnect }),
 }));
-
-function setEthereum(value: unknown) {
-  Object.defineProperty(window, "ethereum", {
-    value,
-    writable: true,
-    configurable: true,
-  });
-}
 
 describe("ConnectWallet", () => {
   beforeEach(() => {
@@ -98,5 +91,23 @@ describe("ConnectWallet", () => {
     expect(screen.getByText(/0x94880b/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /disconnect/i }));
     expect(disconnect).toHaveBeenCalled();
+  });
+
+  it("shows a friendly hint when the provider is missing", () => {
+    wagmiState.error = new Error("Provider not found");
+    render(<ConnectWallet />);
+
+    expect(
+      screen.getByText(/No se encontró un provider/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows connecting state while detection or connect is pending", () => {
+    wagmiState.isPending = true;
+    render(<ConnectWallet />);
+
+    expect(
+      screen.getByRole("button", { name: /connecting/i }),
+    ).toBeDisabled();
   });
 });
