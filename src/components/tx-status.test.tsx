@@ -44,4 +44,9 @@ describe("TxStatus", () => {
       `${ETHERSCAN_TX_URL}/${hash}`,
     );
   });
+
+  it("renders nothing for orphan hash states", () => {
+    const { container } = render(<TxStatus hash={hash} />);
+    expect(container).toBeEmptyDOMElement();
+  });
 });

@@ -8,6 +8,7 @@ const writeContract = vi.fn();
 
 const withdrawState = {
   isConnected: false,
+  simulateError: null as Error | null,
   bankStats: {
     data: [
       { result: 10_000_000n },
@@ -31,7 +32,7 @@ vi.mock("wagmi", async (importOriginal) => {
     useAccount: () => ({ isConnected: withdrawState.isConnected }),
     useSimulateContract: () => ({
       data: undefined,
-      error: null,
+      error: withdrawState.simulateError,
       isFetching: false,
     }),
     useWriteContract: () => ({
@@ -56,6 +57,7 @@ vi.mock("@/hooks/use-kipubank", () => ({
 describe("WithdrawUsdc", () => {
   beforeEach(() => {
     withdrawState.isConnected = false;
+    withdrawState.simulateError = null;
     vi.stubEnv(
       "NEXT_PUBLIC_KIPUBANK_ADDRESS",
       "0x94880bC1361cd7723E55eE9c7bCce319fa2F93e4",
@@ -87,5 +89,17 @@ describe("WithdrawUsdc", () => {
 
     await user.click(screen.getByRole("button", { name: /max/i }));
     expect(screen.getByLabelText(/Amount \(USDC\)/i)).toHaveValue(0.5);
+  });
+
+  it("surfaces decoded simulation errors from the bank contract", async () => {
+    const user = userEvent.setup();
+    withdrawState.isConnected = true;
+    withdrawState.simulateError = new Error("Insufficient USDC balance for this withdrawal.");
+    renderWithProviders(<WithdrawUsdc />);
+
+    await user.type(screen.getByLabelText(/Amount \(USDC\)/i), "0.1");
+    expect(
+      await screen.findByText(/Insufficient USDC balance/i),
+    ).toBeInTheDocument();
   });
 });

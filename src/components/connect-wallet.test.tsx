@@ -92,4 +92,22 @@ describe("ConnectWallet", () => {
     await user.click(screen.getByRole("button", { name: /disconnect/i }));
     expect(disconnect).toHaveBeenCalled();
   });
+
+  it("shows a friendly hint when the provider is missing", () => {
+    wagmiState.error = new Error("Provider not found");
+    render(<ConnectWallet />);
+
+    expect(
+      screen.getByText(/No se encontró un provider/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows connecting state while detection or connect is pending", () => {
+    wagmiState.isPending = true;
+    render(<ConnectWallet />);
+
+    expect(
+      screen.getByRole("button", { name: /connecting/i }),
+    ).toBeDisabled();
+  });
 });
