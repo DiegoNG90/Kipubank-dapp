@@ -7,7 +7,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { parseUnits, formatUnits } from "viem";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowUpFromLine } from "lucide-react";
 import {
@@ -26,10 +25,16 @@ import {
   getKipuBankAddress,
   USDC_DECIMALS,
 } from "@/lib/constants";
+import { ZERO } from "@/lib/bigint";
 import { useBankStats, useUserUsdcBalance } from "@/hooks/use-kipubank";
+import { mapBankStats } from "@/lib/bank-stats";
+import { parseAmountInput } from "@/lib/amounts";
+import {
+  formatMaxWithdrawInput,
+  validateWithdrawAmount,
+} from "@/lib/withdraw";
 import { decodeKipuBankError } from "@/lib/errors";
 import { formatUsd } from "@/lib/utils";
-import { ZERO } from "@/lib/bigint";
 
 export function WithdrawUsdc() {
   const contractAddress = getKipuBankAddress();
@@ -40,29 +45,18 @@ export function WithdrawUsdc() {
 
   const [amount, setAmount] = useState("");
 
-  const usdcAddress = bankStats.data?.[6]?.result as `0x${string}` | undefined;
-  const maxWithdrawal = bankStats.data?.[4]?.result as bigint | undefined;
+  const { usdc: usdcAddress, maxWithdrawal } = mapBankStats(bankStats.data);
   const userUsdc = userBalance.data?.[0]?.result as bigint | undefined;
 
-  const parsedAmount = useMemo(() => {
-    try {
-      if (!amount || Number(amount) <= 0) return undefined;
-      return parseUnits(amount, USDC_DECIMALS);
-    } catch {
-      return undefined;
-    }
-  }, [amount]);
+  const parsedAmount = useMemo(
+    () => parseAmountInput(amount, USDC_DECIMALS),
+    [amount],
+  );
 
-  const clientValidation = useMemo(() => {
-    if (!parsedAmount || parsedAmount <= ZERO) return "Enter a valid amount.";
-    if (userUsdc !== undefined && parsedAmount > userUsdc) {
-      return `Insufficient balance. You have $${formatUsd(userUsdc)} USDC.`;
-    }
-    if (maxWithdrawal !== undefined && parsedAmount > maxWithdrawal) {
-      return `Exceeds per-transaction limit of $${formatUsd(maxWithdrawal)}.`;
-    }
-    return null;
-  }, [parsedAmount, userUsdc, maxWithdrawal]);
+  const clientValidation = useMemo(
+    () => validateWithdrawAmount(parsedAmount, userUsdc, maxWithdrawal),
+    [parsedAmount, userUsdc, maxWithdrawal],
+  );
 
   const {
     data: simulateData,
@@ -112,9 +106,7 @@ export function WithdrawUsdc() {
 
   function handleMax() {
     if (userUsdc === undefined) return;
-    const cap = maxWithdrawal ?? userUsdc;
-    const maxAllowed = userUsdc < cap ? userUsdc : cap;
-    setAmount(formatUnits(maxAllowed, USDC_DECIMALS));
+    setAmount(formatMaxWithdrawInput(userUsdc, maxWithdrawal, USDC_DECIMALS));
   }
 
   function handleWithdraw() {
