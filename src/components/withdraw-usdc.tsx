@@ -26,7 +26,7 @@ import {
   USDC_DECIMALS,
 } from "@/lib/constants";
 import { ZERO } from "@/lib/bigint";
-import { useBankStats, useUserUsdcBalance } from "@/hooks/use-kipubank";
+import { useBankStats, useUserUsdcBalance, useIsSepolia } from "@/hooks/use-kipubank";
 import { mapBankStats } from "@/lib/bank-stats";
 import { parseAmountInput } from "@/lib/amounts";
 import {
@@ -39,6 +39,7 @@ import { formatUsd } from "@/lib/utils";
 export function WithdrawUsdc() {
   const contractAddress = getKipuBankAddress();
   const { isConnected } = useAccount();
+  const isSepolia = useIsSepolia();
   const queryClient = useQueryClient();
   const bankStats = useBankStats();
   const userBalance = useUserUsdcBalance();
@@ -77,7 +78,8 @@ export function WithdrawUsdc() {
         !!parsedAmount &&
         parsedAmount > ZERO &&
         !clientValidation &&
-        isConnected,
+        isConnected &&
+        isSepolia,
     },
   });
 

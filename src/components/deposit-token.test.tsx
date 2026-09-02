@@ -62,6 +62,7 @@ vi.mock("wagmi", async (importOriginal) => {
 
 vi.mock("@/hooks/use-kipubank", () => ({
   useBankStats: () => depositTokenState.bankStats,
+  useIsSepolia: () => true,
 }));
 
 describe("DepositToken", () => {

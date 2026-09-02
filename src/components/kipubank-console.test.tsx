@@ -19,6 +19,7 @@ vi.mock("@/hooks/use-kipubank", () => ({
     ],
   }),
   useUserUsdcBalance: () => ({ data: [{ result: 0n }] }),
+  useIsSepolia: () => true,
 }));
 
 describe("KipuBankConsole", () => {
@@ -37,6 +38,7 @@ describe("KipuBankConsole", () => {
     renderWithProviders(<KipuBankConsole />);
 
     expect(screen.getByText("KipuBank Console")).toBeInTheDocument();
+    expect(screen.getByText(/Sepolia testnet only/i)).toBeInTheDocument();
     expect(screen.getByText("Bank Overview")).toBeInTheDocument();
     expect(screen.getByText("Deposit ETH")).toBeInTheDocument();
     expect(screen.getByText("Deposit ERC-20")).toBeInTheDocument();

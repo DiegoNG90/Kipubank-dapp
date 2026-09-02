@@ -17,27 +17,25 @@ export function NetworkGuard({ children }: { children: React.ReactNode }) {
 
   if (chainId !== SEPOLIA_CHAIN_ID) {
     return (
-      <div className="space-y-6">
-        <Alert variant="warning">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Wrong network</AlertTitle>
-          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span>
-              KipuBank Console requires Sepolia (chain ID {SEPOLIA_CHAIN_ID}).
-              You are on chain {chainId ?? "unknown"}.
-            </span>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={isPending}
-              onClick={() => switchChain({ chainId: sepolia.id })}
-            >
-              {isPending ? "Switching…" : "Switch to Sepolia"}
-            </Button>
-          </AlertDescription>
-        </Alert>
-        {children}
-      </div>
+      <Alert variant="warning">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Wrong network</AlertTitle>
+        <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            KipuBank Console requires Sepolia (chain ID {SEPOLIA_CHAIN_ID}).
+            You are on chain {chainId ?? "unknown"}. Switch before depositing
+            or withdrawing.
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={isPending}
+            onClick={() => switchChain({ chainId: sepolia.id })}
+          >
+            {isPending ? "Switching…" : "Switch to Sepolia"}
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 

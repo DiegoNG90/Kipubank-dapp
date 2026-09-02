@@ -31,7 +31,7 @@ import {
   SEPOLIA_USDC,
   USDC_DECIMALS,
 } from "@/lib/constants";
-import { useBankStats } from "@/hooks/use-kipubank";
+import { useBankStats, useIsSepolia } from "@/hooks/use-kipubank";
 import { mapBankStats } from "@/lib/bank-stats";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { parseAmountInput } from "@/lib/amounts";
@@ -50,6 +50,7 @@ type TxStep = "idle" | "approve" | "deposit";
 export function DepositToken() {
   const contractAddress = getKipuBankAddress();
   const { address: userAddress, isConnected } = useAccount();
+  const isSepolia = useIsSepolia();
   const queryClient = useQueryClient();
   const bankStats = useBankStats();
 
@@ -154,7 +155,8 @@ export function DepositToken() {
         !!needsApproval &&
         !!contractAddress &&
         !!parsedAmount &&
-        isConnected,
+        isConnected &&
+        isSepolia,
     },
   });
 
@@ -177,6 +179,7 @@ export function DepositToken() {
         parsedAmount > ZERO &&
         !needsApproval &&
         isConnected &&
+        isSepolia &&
         tokenValid,
     },
   });

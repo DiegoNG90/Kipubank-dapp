@@ -31,6 +31,10 @@ export function KipuBankConsole() {
       </header>
 
       <main className="relative mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+        <div className="rounded-lg border border-amber-900/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-200">
+          Sepolia testnet only. Do not send mainnet funds. This UI never asks
+          for a private key — connect MetaMask and confirm in the wallet.
+        </div>
         <NetworkGuard>
           <BankPanel />
 

@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  vitest:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +17,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run lint
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_KIPUBANK_ADDRESS: 0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca
+          NEXT_PUBLIC_SEPOLIA_RPC_URL: https://ethereum-sepolia-rpc.publicnode.com
