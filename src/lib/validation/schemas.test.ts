@@ -1,3 +1,4 @@
+import { getAddress } from "viem";
 import { describe, expect, it } from "vitest";
 import {
   ethereumAddressSchema,
@@ -8,12 +9,11 @@ import {
 
 describe("ethereumAddressSchema", () => {
   it("accepts a valid checksummed address", () => {
-    const result = ethereumAddressSchema.safeParse(
-      "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-    );
+    const input = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+    const result = ethereumAddressSchema.safeParse(input);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data).toBe("0x1c7D4B196Cb0C7B01D743Fbc6116a902379C7238");
+      expect(result.data).toBe(getAddress(input));
     }
   });
 

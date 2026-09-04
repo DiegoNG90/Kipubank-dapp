@@ -165,3 +165,6 @@ export function useTxHistory(
       );
 
       return attachTimestamps(entries, timestampsByBlock);
+    },
+  });
+}

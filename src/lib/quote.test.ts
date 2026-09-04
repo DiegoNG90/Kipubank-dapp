@@ -40,7 +40,7 @@ describe("describeQuote", () => {
 
     expect(vm.pathLabel).toBe("ETH → WETH → USDC");
     expect(vm.estimatedOutLabel).toMatch(/\$2[.,]50/);
-    expect(vm.minOutLabel).toMatch(/\$2[.,]3/);
+    expect(vm.minOutLabel).toMatch(/\$2[.,]49/);
     expect(vm.slippageLabel).toBe("0.50%");
     expect(vm.noLiquidity).toBe(false);
     expect(vm.warnings).toHaveLength(0);

@@ -19,6 +19,6 @@ describe("Stepper", () => {
 
   it("shows checkmarks for completed steps", () => {
     render(<Stepper steps={steps} currentStepId="confirm" />);
-    expect(screen.getByText("✓")).toBeInTheDocument();
+    expect(screen.getAllByText("✓")).toHaveLength(2);
   });
 });

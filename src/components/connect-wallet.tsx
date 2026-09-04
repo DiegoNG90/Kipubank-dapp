@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { ExternalLink, LogOut, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,9 @@ export function ConnectWallet() {
   const availability = useWalletAvailability();
 
   const [installOpen, setInstallOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [dismissedGuideError, setDismissedGuideError] = useState<string | null>(
+    null,
+  );
   const [isDetecting, setIsDetecting] = useState(false);
 
   const connector =
@@ -33,12 +35,12 @@ export function ConnectWallet() {
     connectors[0];
 
   const classifiedError = error ? classifyConnectError(error) : null;
-
-  useEffect(() => {
-    if (error && shouldOpenWalletGuide(error)) {
-      setGuideOpen(true);
-    }
-  }, [error]);
+  const guideErrorKey =
+    error && shouldOpenWalletGuide(error)
+      ? classifiedError?.message ?? error.message
+      : null;
+  const guideOpen =
+    guideErrorKey !== null && dismissedGuideError !== guideErrorKey;
 
   async function handleConnect() {
     setIsDetecting(true);
@@ -121,7 +123,7 @@ export function ConnectWallet() {
       <Modal
         open={guideOpen}
         title="Abrí MetaMask para conectar"
-        onClose={() => setGuideOpen(false)}
+        onClose={() => setDismissedGuideError(guideErrorKey)}
       >
         <ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed text-zinc-300">
           <li>
@@ -139,7 +141,10 @@ export function ConnectWallet() {
           Si ya tenés una solicitud pendiente, respondela en la ventana de
           MetaMask antes de reintentar.
         </p>
-        <Button className="mt-4 w-full" onClick={() => setGuideOpen(false)}>
+        <Button
+          className="mt-4 w-full"
+          onClick={() => setDismissedGuideError(guideErrorKey)}
+        >
           Entendido
         </Button>
         <Button
@@ -147,7 +152,7 @@ export function ConnectWallet() {
           variant="secondary"
           disabled={busy}
           onClick={() => {
-            setGuideOpen(false);
+            setDismissedGuideError(guideErrorKey);
             void handleConnect();
           }}
         >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useAccount,
   useReadContract,
@@ -296,16 +296,6 @@ export function DepositTokenWizard() {
     },
   });
 
-  const enrichedContext = useMemo(
-    () => ({
-      ...stepperContext,
-      approveSimReady: !!approveSim?.request,
-      depositSimReady: !!depositSim?.request,
-      isPendingTx: isPending || isConfirming,
-    }),
-    [approveSim?.request, depositSim?.request, isPending, isConfirming, stepperContext],
-  );
-
   const {
     writeContract,
     data: txHash,
@@ -319,28 +309,18 @@ export function DepositTokenWizard() {
       hash: txHash,
     });
 
-  useEffect(() => {
-    if (!txSuccess) return;
-    void queryClient.invalidateQueries();
-    resetWrite();
+  const enrichedContext = useMemo(
+    () => ({
+      ...stepperContext,
+      approveSimReady: !!approveSim?.request,
+      depositSimReady: !!depositSim?.request,
+      isPendingTx: isPending || isConfirming,
+    }),
+    [approveSim?.request, depositSim?.request, isPending, isConfirming, stepperContext],
+  );
 
-    if (txKind === "approve") {
-      void refetchAllowance();
-      setTxKind("idle");
-      return;
-    }
-
-    if (txKind === "deposit") {
-      setStep("success");
-      setTxKind("idle");
-    }
-  }, [txSuccess, queryClient, resetWrite, txKind, refetchAllowance]);
-
-  useEffect(() => {
-    if (step === "approve" && !needsApproval) {
-      setStep("confirm");
-    }
-  }, [step, needsApproval]);
+  const activeStep =
+    step === "approve" && !needsApproval ? "confirm" : step;
 
   const simulationMessage =
     step === "approve" && approveSimError
@@ -383,13 +363,25 @@ export function DepositTokenWizard() {
   function handleApprove() {
     if (!approveSim?.request) return;
     setTxKind("approve");
-    writeContract(approveSim.request);
+    writeContract(approveSim.request, {
+      onSuccess: () => {
+        void refetchAllowance();
+        void queryClient.invalidateQueries();
+        setTxKind("idle");
+      },
+    });
   }
 
   function handleDeposit() {
     if (!depositSim?.request) return;
     setTxKind("deposit");
-    writeContract(depositSim.request);
+    writeContract(depositSim.request, {
+      onSuccess: () => {
+        void queryClient.invalidateQueries();
+        setStep("success");
+        setTxKind("idle");
+      },
+    });
   }
 
   if (!contractAddress) return null;
@@ -427,9 +419,9 @@ export function DepositTokenWizard() {
         onClose={closeWizard}
       >
         <div className="space-y-6">
-          <Stepper steps={stepperSteps} currentStepId={step} />
+          <Stepper steps={stepperSteps} currentStepId={activeStep} />
 
-          {step === "token" && (
+          {activeStep === "token" && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">
                 Enter the contract address of the token you want to deposit.
@@ -475,7 +467,7 @@ export function DepositTokenWizard() {
             </div>
           )}
 
-          {step === "amount" && (
+          {activeStep === "amount" && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">
                 Choose how much {symbol} to deposit. We will show an estimated
@@ -522,7 +514,7 @@ export function DepositTokenWizard() {
             </div>
           )}
 
-          {step === "approve" && (
+          {activeStep === "approve" && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">
                 {getApprovePreviewCopy(symbol, amountLabel)}
@@ -562,7 +554,7 @@ export function DepositTokenWizard() {
             </div>
           )}
 
-          {step === "confirm" && (
+          {activeStep === "confirm" && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">
                 {getDepositPreviewCopy(isUsdc, symbol)}
@@ -614,7 +606,7 @@ export function DepositTokenWizard() {
             </div>
           )}
 
-          {step === "success" && (
+          {activeStep === "success" && (
             <div className="space-y-4">
               <Alert variant="success">
                 <AlertDescription>

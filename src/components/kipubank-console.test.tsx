@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KipuBankConsole } from "@/components/kipubank-console";
 import { renderWithProviders } from "@/test/render";
 
+vi.mock("@/hooks/use-wallet-availability", () => ({
+  useWalletAvailability: () => "installed" as const,
+}));
+
 vi.mock("@/hooks/use-kipubank", () => ({
   useIsConfigured: () => true,
   useBankStats: () => ({

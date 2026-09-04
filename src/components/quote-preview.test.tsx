@@ -40,6 +40,6 @@ describe("QuotePreview", () => {
     });
 
     render(<QuotePreview quote={quote} />);
-    expect(screen.getByText(/liquidity/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/liquidity/i).length).toBeGreaterThan(0);
   });
 });

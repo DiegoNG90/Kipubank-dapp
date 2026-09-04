@@ -63,7 +63,7 @@ export function QuotePreview({
         </Alert>
       ))}
 
-      {quote.noLiquidity && (
+      {quote.noLiquidity && quote.warnings.length === 0 && (
         <p className="text-amber-400/90">
           Unable to quote — check liquidity on Sepolia.
         </p>

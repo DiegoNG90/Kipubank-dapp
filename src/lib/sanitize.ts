@@ -12,16 +12,20 @@ function stripControlChars(value: string): string {
   return value.replace(/[\x00-\x1F\x7F]/g, "").trim();
 }
 
+function stripUnsafeMarkup(value: string): string {
+  return value.replace(/[<>]/g, "");
+}
+
 export function sanitizeTokenSymbol(raw: string | undefined | null): string {
   if (!raw) return DEFAULT_SYMBOL;
-  const cleaned = stripControlChars(raw);
+  const cleaned = stripUnsafeMarkup(stripControlChars(raw));
   if (!cleaned) return DEFAULT_SYMBOL;
   return cleaned.slice(0, MAX_SYMBOL_LENGTH);
 }
 
 export function sanitizeTokenName(raw: string | undefined | null): string {
   if (!raw) return DEFAULT_SYMBOL;
-  const cleaned = stripControlChars(raw);
+  const cleaned = stripUnsafeMarkup(stripControlChars(raw));
   if (!cleaned) return DEFAULT_SYMBOL;
   return cleaned.slice(0, MAX_NAME_LENGTH);
 }

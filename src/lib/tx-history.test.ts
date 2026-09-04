@@ -6,7 +6,6 @@ import {
   filterDepositsBySender,
   formatHistoryTypeLabel,
   formatRelativeTime,
-  mergeCreditedFromUsdcTransfers,
   sortHistoryDesc,
 } from "@/lib/tx-history";
 

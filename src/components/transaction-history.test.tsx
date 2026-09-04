@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionHistory } from "@/components/transaction-history";
 import { renderWithProviders } from "@/test/render";
@@ -22,12 +22,16 @@ const historyState = {
   },
 };
 
-vi.mock("wagmi", () => ({
-  useAccount: () => ({
-    isConnected: historyState.isConnected,
-    address: historyState.address,
-  }),
-}));
+vi.mock("wagmi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("wagmi")>();
+  return {
+    ...actual,
+    useAccount: () => ({
+      isConnected: historyState.isConnected,
+      address: historyState.address,
+    }),
+  };
+});
 
 vi.mock("@/hooks/use-kipubank", () => ({
   useBankStats: () => ({
@@ -90,7 +94,7 @@ describe("TransactionHistory", () => {
 
     expect(screen.getByText("Deposit ETH")).toBeInTheDocument();
     expect(screen.getByText(/1 ETH/i)).toBeInTheDocument();
-    expect(screen.getByText(/\$2\.50/)).toBeInTheDocument();
+    expect(screen.getByText(/\$2[.,]50/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /etherscan/i })).toHaveAttribute(
       "href",
       expect.stringContaining("sepolia.etherscan.io/tx/"),
