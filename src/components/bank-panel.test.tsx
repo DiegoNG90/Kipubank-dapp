@@ -86,6 +86,10 @@ describe("BankPanel", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getByText("25.0%")).toBeInTheDocument();
     expect(screen.getByText("1.00%")).toBeInTheDocument();
+    expect(screen.getByText(/Available capacity/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Up to \$7[.,]50 more can be deposited/i),
+    ).toBeInTheDocument();
   });
 
   it("shows the connected user's USDC balance", () => {

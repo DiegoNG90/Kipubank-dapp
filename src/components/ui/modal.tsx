@@ -6,15 +6,30 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+type ModalSize = "md" | "lg";
+
+const modalSizeClasses: Record<ModalSize, string> = {
+  md: "max-w-md",
+  lg: "max-w-2xl",
+};
+
 type ModalProps = {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  size?: ModalSize;
 };
 
-export function Modal({ open, title, onClose, children, className }: ModalProps) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  className,
+  size = "md",
+}: ModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -47,7 +62,8 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative z-[101] w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl shadow-black/40",
+          "relative z-[101] w-full rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl shadow-black/40",
+          modalSizeClasses[size],
           className,
         )}
       >

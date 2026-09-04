@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   useAccount,
-  useReadContract,
   useSimulateContract,
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { formatUnits } from "viem";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowDownToLine } from "lucide-react";
 import {
@@ -22,21 +20,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TxStatus } from "@/components/tx-status";
+import { QuotePreview } from "@/components/quote-preview";
 import { kipuBankAbi } from "@/lib/abis/kipubank";
-import { uniswapV2RouterAbi } from "@/lib/abis/router";
 import {
   getKipuBankAddress,
   ETH_DECIMALS,
-  USDC_DECIMALS,
 } from "@/lib/constants";
 import { useBankStats, useIsSepolia } from "@/hooks/use-kipubank";
-import { mapBankStats } from "@/lib/bank-stats";
+import { useSwapQuote } from "@/hooks/use-swap-quote";
+import {
+  calculateRemainingCapacity,
+  mapBankStats,
+} from "@/lib/bank-stats";
 import { useDebouncedValue } from "@/hooks/use-debounce";
-import { parseAmountInput } from "@/lib/amounts";
+import { parseAmountInput, isPositiveAmount } from "@/lib/amounts";
 import { buildEthSwapPath } from "@/lib/token-deposit";
-import { calculateMinOut } from "@/lib/swap";
 import { decodeKipuBankError } from "@/lib/errors";
-import { formatUsd } from "@/lib/utils";
 import { ZERO } from "@/lib/bigint";
 
 export function DepositEth() {
@@ -49,8 +48,10 @@ export function DepositEth() {
   const [amount, setAmount] = useState("");
   const debouncedAmount = useDebouncedValue(amount);
 
-  const { router: routerAddress, slippageBps, usdc: usdcAddress } =
+  const { router: routerAddress, slippageBps, usdc: usdcAddress, bankCap, totalDeposits } =
     mapBankStats(bankStats.data);
+
+  const remainingCapacity = calculateRemainingCapacity(bankCap, totalDeposits);
 
   const parsedValue = useMemo(
     () => parseAmountInput(debouncedAmount, ETH_DECIMALS),
@@ -62,25 +63,23 @@ export function DepositEth() {
     [usdcAddress],
   );
 
-  const { data: quoteData, isFetching: isQuoting } = useReadContract({
-    address: routerAddress,
-    abi: uniswapV2RouterAbi,
-    functionName: "getAmountsOut",
-    args: parsedValue && swapPath ? [parsedValue, [...swapPath]] : undefined,
-    query: {
-      enabled: !!parsedValue && !!routerAddress && !!swapPath,
-    },
+  const symbolsByAddress = useMemo(
+    () => (usdcAddress ? { [usdcAddress.toLowerCase()]: "USDC" } : {}),
+    [usdcAddress],
+  );
+
+  const { quote, isQuoting } = useSwapQuote({
+    routerAddress,
+    amountIn: parsedValue,
+    path: swapPath,
+    decimalsIn: ETH_DECIMALS,
+    symbolIn: "ETH",
+    slippageBps,
+    symbolsByAddress,
+    treatFirstAsEth: true,
+    remainingCapacity,
+    enabled: isPositiveAmount(parsedValue) && !!routerAddress && !!swapPath,
   });
-
-  const estimatedUsdc =
-    quoteData && quoteData.length > 0
-      ? quoteData[quoteData.length - 1]
-      : undefined;
-
-  const minUsdc =
-    estimatedUsdc !== undefined && slippageBps !== undefined
-      ? calculateMinOut(estimatedUsdc, slippageBps)
-      : undefined;
 
   const {
     data: simulateData,
@@ -97,7 +96,8 @@ export function DepositEth() {
         !!parsedValue &&
         parsedValue > ZERO &&
         isConnected &&
-        isSepolia,
+        isSepolia &&
+        !quote?.wouldExceedRemainingCap,
     },
   });
 
@@ -128,7 +128,8 @@ export function DepositEth() {
     !!simulateData?.request &&
     !simulationMessage &&
     !isPending &&
-    !isConfirming;
+    !isConfirming &&
+    !quote?.wouldExceedRemainingCap;
 
   function handleDeposit() {
     if (!simulateData?.request) return;
@@ -173,30 +174,7 @@ export function DepositEth() {
             </div>
 
             {parsedValue && parsedValue > ZERO && (
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 text-sm">
-                {isQuoting ? (
-                  <p className="text-zinc-400">Fetching quote…</p>
-                ) : estimatedUsdc !== undefined ? (
-                  <div className="space-y-1">
-                    <p className="text-zinc-300">
-                      Est. USDC:{" "}
-                      <span className="font-medium text-emerald-400">
-                        ${formatUsd(estimatedUsdc)}
-                      </span>
-                    </p>
-                    {minUsdc !== undefined && slippageBps !== undefined && (
-                      <p className="text-zinc-500">
-                        Min after {Number(slippageBps) / 100}% slippage: $
-                        {formatUsd(minUsdc)} ({formatUnits(minUsdc, USDC_DECIMALS)} USDC)
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-amber-400/90">
-                    Unable to quote — check liquidity on Sepolia.
-                  </p>
-                )}
-              </div>
+              <QuotePreview quote={quote} isLoading={isQuoting} />
             )}
 
             {simulationMessage && (

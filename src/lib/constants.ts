@@ -20,6 +20,15 @@ export const ETH_DECIMALS = 18;
 
 export const ETHERSCAN_TX_URL = "https://sepolia.etherscan.io/tx";
 
+/** When deploy block is unset, scan at most this many blocks for history. */
+export const HISTORY_BLOCK_WINDOW = 100_000n;
+
+/** Max block range per eth_getLogs request (public RPC limits). */
+export const HISTORY_LOG_CHUNK_SIZE = 5_000n;
+
+/** Max entries rendered in the transaction history panel. */
+export const MAX_HISTORY_ENTRIES = 50;
+
 export function getKipuBankAddress(): `0x${string}` | undefined {
   const address = process.env.NEXT_PUBLIC_KIPUBANK_ADDRESS;
   if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
@@ -35,4 +44,23 @@ export function isExpectedKipuBankAddress(
     !!address &&
     address.toLowerCase() === EXPECTED_KIPUBANK_ADDRESS.toLowerCase()
   );
+}
+
+export function getKipuBankDeployBlock(): bigint | undefined {
+  const raw = process.env.NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK?.trim();
+  if (!raw || !/^\d+$/.test(raw)) return undefined;
+  return BigInt(raw);
+}
+
+export function resolveHistoryFromBlock(
+  currentBlock: bigint,
+  deployBlock: bigint | undefined = getKipuBankDeployBlock(),
+): bigint {
+  if (deployBlock !== undefined && deployBlock <= currentBlock) {
+    return deployBlock;
+  }
+  if (currentBlock > HISTORY_BLOCK_WINDOW) {
+    return currentBlock - HISTORY_BLOCK_WINDOW;
+  }
+  return 0n;
 }

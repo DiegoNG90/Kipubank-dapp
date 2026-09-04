@@ -78,6 +78,23 @@ npm run build
 | `Failed to fetch` / `eth_call` HTTP error | Change `NEXT_PUBLIC_SEPOLIA_RPC_URL` and restart `npm run dev` |
 | Wrong network banner | Use the in-app switch to Sepolia (chain id `11155111`) |
 | Deposit reverts | Confirm `NEXT_PUBLIC_KIPUBANK_ADDRESS` is the live address above, not the broken one |
+| History empty or fails to load | Set `NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK` to the contract creation block on Etherscan, or use a faster RPC |
+
+## Transaction history
+
+When your wallet is connected, the console reads KipuBankV3 events from Sepolia:
+
+- `SuccessfulEtherDeposit` / `SuccessfulTokenDeposit` (filtered to your address client-side)
+- `SuccessfulTokenWithdrawal` (filtered on-chain by indexed `_sender`)
+- USDC `Transfer` logs to the bank contract (best-effort join for “USDC credited”)
+
+Logs are fetched in block chunks to stay within public RPC limits. By default the UI scans the latest `100000` blocks unless `NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK` is set in `.env.local`.
+
+```env
+NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK=1234567
+```
+
+Find the creation block on [Etherscan](https://sepolia.etherscan.io/address/0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca) under **Contract Creator** → creation transaction → block number.
 
 ## Stack
 

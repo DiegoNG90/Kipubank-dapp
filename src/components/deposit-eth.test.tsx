@@ -74,5 +74,6 @@ describe("DepositEth", () => {
     expect(
       screen.getByRole("button", { name: /deposit eth/i }),
     ).toBeDisabled();
+    expect(screen.queryByText(/Swap path/i)).not.toBeInTheDocument();
   });
 });
