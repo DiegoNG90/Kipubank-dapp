@@ -4,8 +4,9 @@ import { ConnectWallet } from "@/components/connect-wallet";
 import { NetworkGuard } from "@/components/network-guard";
 import { BankPanel } from "@/components/bank-panel";
 import { DepositEth } from "@/components/deposit-eth";
-import { DepositToken } from "@/components/deposit-token";
+import { DepositTokenWizard } from "@/components/deposit-token-wizard";
 import { WithdrawUsdc } from "@/components/withdraw-usdc";
+import { TransactionHistory } from "@/components/transaction-history";
 import { Landmark } from "lucide-react";
 
 export function KipuBankConsole() {
@@ -40,9 +41,11 @@ export function KipuBankConsole() {
 
           <div className="grid gap-6 lg:grid-cols-3">
             <DepositEth />
-            <DepositToken />
+            <DepositTokenWizard />
             <WithdrawUsdc />
           </div>
+
+          <TransactionHistory />
         </NetworkGuard>
       </main>
 

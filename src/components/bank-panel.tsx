@@ -17,6 +17,8 @@ import {
 import { isExpectedKipuBankAddress } from "@/lib/constants";
 import {
   calculateCapacityPct,
+  calculateRemainingCapacity,
+  isCapacityNearFull,
   mapBankStats,
 } from "@/lib/bank-stats";
 import { formatUsd } from "@/lib/utils";
@@ -62,6 +64,8 @@ export function BankPanel() {
   } = mapBankStats(bankStats.data);
 
   const capacityPct = calculateCapacityPct(bankCap, totalDeposits);
+  const remainingCapacity = calculateRemainingCapacity(bankCap, totalDeposits);
+  const nearFull = isCapacityNearFull(capacityPct);
 
   const userUsdc = userBalance.data?.[0]?.result as bigint | undefined;
   const unexpectedContract = !isExpectedKipuBankAddress();
@@ -92,6 +96,12 @@ export function BankPanel() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Total Value Locked" value={`$${formatUsd(totalDeposits ?? ZERO)}`} />
           <Stat label="Bank Cap" value={`$${formatUsd(bankCap ?? ZERO)}`} />
+          <Stat
+            label="Available capacity"
+            value={`$${formatUsd(remainingCapacity)}`}
+            hint={nearFull ? "Near full — large deposits may revert" : undefined}
+            warn={nearFull}
+          />
           <Stat label="Deposits" value={depositOps?.toString() ?? "—"} />
           <Stat label="Withdrawals" value={withdrawOps?.toString() ?? "—"} />
         </div>
@@ -99,11 +109,20 @@ export function BankPanel() {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-zinc-400">Capacity used</span>
-            <span className="font-medium text-zinc-200">
+            <span
+              className={`font-medium ${nearFull ? "text-amber-300" : "text-zinc-200"}`}
+            >
               {capacityPct.toFixed(1)}%
             </span>
           </div>
-          <Progress value={capacityPct} />
+          <Progress
+            value={capacityPct}
+            className={nearFull ? "[&>div]:from-amber-600 [&>div]:to-amber-400" : undefined}
+          />
+          <p className="text-xs text-zinc-500">
+            Up to ${formatUsd(remainingCapacity)} more can be deposited before
+            the bank reaches its cap.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -142,19 +161,32 @@ function Stat({
   label,
   value,
   small,
+  hint,
+  warn,
 }: {
   label: string;
   value: string;
   small?: boolean;
+  hint?: string;
+  warn?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
+    <div
+      className={`rounded-lg border bg-zinc-950/40 p-4 ${
+        warn ? "border-amber-900/50" : "border-zinc-800"
+      }`}
+    >
       <p className="text-xs uppercase tracking-wider text-zinc-500">{label}</p>
       <p
-        className={`mt-1 font-semibold text-zinc-100 ${small ? "text-base" : "text-xl"}`}
+        className={`mt-1 font-semibold ${small ? "text-base" : "text-xl"} ${
+          warn ? "text-amber-200" : "text-zinc-100"
+        }`}
       >
         {value}
       </p>
+      {hint && (
+        <p className="mt-1 text-xs text-amber-400/90">{hint}</p>
+      )}
     </div>
   );
 }

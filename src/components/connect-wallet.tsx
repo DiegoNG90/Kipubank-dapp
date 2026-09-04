@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { ExternalLink, LogOut, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { canOpenWallet, METAMASK_DOWNLOAD_URL } from "@/lib/metamask";
-import { providerHint } from "@/lib/wallet-ui";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useWalletAvailability } from "@/hooks/use-wallet-availability";
+import {
+  METAMASK_DOWNLOAD_URL,
+  resolveWalletAvailability,
+} from "@/lib/metamask";
+import {
+  classifyConnectError,
+  shouldOpenWalletGuide,
+} from "@/lib/wallet-ui";
 import { truncateAddress } from "@/lib/utils";
 
 export function ConnectWallet() {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
+  const availability = useWalletAvailability();
+
   const [installOpen, setInstallOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
 
   const connector =
@@ -21,10 +32,19 @@ export function ConnectWallet() {
     connectors.find((item) => item.id === "injected") ??
     connectors[0];
 
+  const classifiedError = error ? classifyConnectError(error) : null;
+
+  useEffect(() => {
+    if (error && shouldOpenWalletGuide(error)) {
+      setGuideOpen(true);
+    }
+  }, [error]);
+
   async function handleConnect() {
     setIsDetecting(true);
     try {
-      if (!(await canOpenWallet())) {
+      const resolved = await resolveWalletAvailability();
+      if (resolved === "not-installed") {
         setInstallOpen(true);
         return;
       }
@@ -48,19 +68,30 @@ export function ConnectWallet() {
     );
   }
 
-  const busy = isPending || isDetecting;
+  const busy = isPending || isDetecting || availability === "detecting";
 
   return (
     <>
       <div className="flex flex-col items-end gap-2">
+        {availability === "installed" && !error && (
+          <p className="max-w-xs text-right text-xs text-zinc-500">
+            MetaMask detectada. Abrí la extensión si no aparece el popup al
+            conectar.
+          </p>
+        )}
+
         <Button onClick={handleConnect} disabled={busy}>
           <Wallet className="h-4 w-4" />
           {busy ? "Connecting…" : "Connect MetaMask"}
         </Button>
-        {error && (
-          <p className="max-w-xs text-right text-xs text-red-400">
-            {providerHint(error.message)}
-          </p>
+
+        {classifiedError && (
+          <Alert
+            variant={classifiedError.kind === "pending" ? "warning" : "destructive"}
+            className="max-w-xs text-left"
+          >
+            <AlertDescription>{classifiedError.message}</AlertDescription>
+          </Alert>
         )}
       </div>
 
@@ -85,6 +116,43 @@ export function ConnectWallet() {
         <p className="mt-3 text-xs text-zinc-500">
           Después de instalarla, recargá esta página y volvé a conectar.
         </p>
+      </Modal>
+
+      <Modal
+        open={guideOpen}
+        title="Abrí MetaMask para conectar"
+        onClose={() => setGuideOpen(false)}
+      >
+        <ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed text-zinc-300">
+          <li>
+            Hacé clic en el ícono de MetaMask (el zorro) en la barra de
+            extensiones de tu navegador.
+          </li>
+          <li>Desbloqueá tu wallet si te lo pide.</li>
+          <li>
+            Volvé a esta página y tocá{" "}
+            <span className="font-medium text-zinc-100">Connect MetaMask</span>{" "}
+            de nuevo.
+          </li>
+        </ol>
+        <p className="mt-4 text-xs text-zinc-500">
+          Si ya tenés una solicitud pendiente, respondela en la ventana de
+          MetaMask antes de reintentar.
+        </p>
+        <Button className="mt-4 w-full" onClick={() => setGuideOpen(false)}>
+          Entendido
+        </Button>
+        <Button
+          className="mt-2 w-full"
+          variant="secondary"
+          disabled={busy}
+          onClick={() => {
+            setGuideOpen(false);
+            void handleConnect();
+          }}
+        >
+          Reintentar conexión
+        </Button>
       </Modal>
     </>
   );

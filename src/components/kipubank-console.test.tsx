@@ -43,6 +43,7 @@ describe("KipuBankConsole", () => {
     expect(screen.getByText("Deposit ETH")).toBeInTheDocument();
     expect(screen.getByText("Deposit ERC-20")).toBeInTheDocument();
     expect(screen.getByText("Withdraw USDC")).toBeInTheDocument();
+    expect(screen.getByText(/Your transaction history/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /connect metamask/i }),
     ).toBeInTheDocument();
