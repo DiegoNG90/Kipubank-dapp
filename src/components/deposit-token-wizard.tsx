@@ -77,7 +77,7 @@ export function DepositTokenWizard() {
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [step, setStep] = useState<DepositWizardStep>("token");
-  const [tokenAddressInput, setTokenAddressInput] = useState(SEPOLIA_USDC);
+  const [tokenAddressInput, setTokenAddressInput] = useState<string>(SEPOLIA_USDC);
   const [amountInput, setAmountInput] = useState("");
   const [txKind, setTxKind] = useState<TxKind>("idle");
 

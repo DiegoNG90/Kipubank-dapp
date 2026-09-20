@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   EXPECTED_KIPUBANK_ADDRESS,
+  EXPECTED_KIPUBANK_DEPLOY_BLOCK,
   getKipuBankAddress,
   getKipuBankDeployBlock,
   HISTORY_BLOCK_WINDOW,
@@ -60,12 +61,22 @@ describe("history block helpers", () => {
   });
 
   it("falls back to a recent window when deploy block is unset", () => {
-    vi.unstubAllEnvs();
+    vi.stubEnv("NEXT_PUBLIC_KIPUBANK_ADDRESS", "");
+    vi.stubEnv("NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK", "");
     expect(resolveHistoryFromBlock(200_000n)).toBe(200_000n - HISTORY_BLOCK_WINDOW);
   });
 
   it("uses the configured deploy block when present", () => {
     vi.stubEnv("NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK", "150000");
     expect(resolveHistoryFromBlock(200_000n)).toBe(150_000n);
+  });
+
+  it("falls back to the known Sepolia deploy block for the live contract", () => {
+    vi.stubEnv("NEXT_PUBLIC_KIPUBANK_ADDRESS", EXPECTED_KIPUBANK_ADDRESS);
+    vi.stubEnv("NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK", "");
+    expect(getKipuBankDeployBlock()).toBe(EXPECTED_KIPUBANK_DEPLOY_BLOCK);
+    expect(resolveHistoryFromBlock(20_000_000n)).toBe(
+      EXPECTED_KIPUBANK_DEPLOY_BLOCK,
+    );
   });
 });

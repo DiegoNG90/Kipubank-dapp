@@ -99,6 +99,7 @@ describe("BankPanel", () => {
 
     expect(screen.getByText("Your USDC balance")).toBeInTheDocument();
     expect(screen.getByText(/\$1[.,]00/)).toBeInTheDocument();
+    expect(screen.getByText(/KipuBank vault/i)).toBeInTheDocument();
   });
 
   it("warns when the env contract is not the known Sepolia deployment", () => {

@@ -100,4 +100,24 @@ describe("TransactionHistory", () => {
       expect.stringContaining("sepolia.etherscan.io/tx/"),
     );
   });
+
+  it("explains an empty scan and links to Etherscan", () => {
+    historyState.isConnected = true;
+    historyState.address = "0x94880bC1361cd7723E55eE9c7bCce319fa2F93e4";
+    vi.stubEnv(
+      "NEXT_PUBLIC_KIPUBANK_ADDRESS",
+      "0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca",
+    );
+    renderWithProviders(<TransactionHistory />);
+
+    expect(
+      screen.getByText(/not an Etherscan transaction scanner/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /your Etherscan address/i }),
+    ).toHaveAttribute(
+      "href",
+      "https://sepolia.etherscan.io/address/0x94880bC1361cd7723E55eE9c7bCce319fa2F93e4",
+    );
+  });
 });

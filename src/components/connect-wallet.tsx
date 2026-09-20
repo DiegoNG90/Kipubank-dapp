@@ -70,7 +70,7 @@ export function ConnectWallet() {
     );
   }
 
-  const busy = isPending || isDetecting || availability === "detecting";
+  const busy = isPending || isDetecting;
 
   return (
     <>

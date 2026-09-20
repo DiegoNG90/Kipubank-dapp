@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import {
-  getImmediateWalletAvailability,
   resolveWalletAvailability,
   startEip6963Discovery,
   type WalletAvailability,
 } from "@/lib/metamask";
 
 export function useWalletAvailability() {
-  const [availability, setAvailability] = useState<WalletAvailability>(() =>
-    getImmediateWalletAvailability(),
+  // Always start as "detecting" so SSR HTML matches the first client render.
+  // Reading window.ethereum during useState init caused a hydration mismatch.
+  const [availability, setAvailability] = useState<WalletAvailability>(
+    "detecting",
   );
 
   useEffect(() => {
