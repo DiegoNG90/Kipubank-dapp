@@ -15,6 +15,9 @@ export const SEPOLIA_USDC =
 export const EXPECTED_KIPUBANK_ADDRESS =
   "0xd8473b57CAdEd25D7b41b4c451e74C1Bf92DD3ca" as const;
 
+/** Creation block of EXPECTED_KIPUBANK_ADDRESS (tx 0x5edc…bebc, block 0xb049bf). */
+export const EXPECTED_KIPUBANK_DEPLOY_BLOCK = 11_553_215n;
+
 export const USDC_DECIMALS = 6;
 export const ETH_DECIMALS = 18;
 
@@ -28,6 +31,9 @@ export const HISTORY_LOG_CHUNK_SIZE = 5_000n;
 
 /** Max entries rendered in the transaction history panel. */
 export const MAX_HISTORY_ENTRIES = 50;
+
+/** Give up on RPC log scans after this many milliseconds. */
+export const HISTORY_FETCH_TIMEOUT_MS = 7_000;
 
 export function getKipuBankAddress(): `0x${string}` | undefined {
   const address = process.env.NEXT_PUBLIC_KIPUBANK_ADDRESS;
@@ -48,8 +54,13 @@ export function isExpectedKipuBankAddress(
 
 export function getKipuBankDeployBlock(): bigint | undefined {
   const raw = process.env.NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK?.trim();
-  if (!raw || !/^\d+$/.test(raw)) return undefined;
-  return BigInt(raw);
+  if (raw && /^\d+$/.test(raw)) {
+    return BigInt(raw);
+  }
+  if (isExpectedKipuBankAddress()) {
+    return EXPECTED_KIPUBANK_DEPLOY_BLOCK;
+  }
+  return undefined;
 }
 
 export function resolveHistoryFromBlock(

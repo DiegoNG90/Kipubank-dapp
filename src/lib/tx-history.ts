@@ -58,6 +58,90 @@ export type TokenWithdrawLog = {
   };
 };
 
+type RpcLogBase = {
+  transactionHash: `0x${string}`;
+  blockNumber: bigint;
+};
+
+export function toEtherDepositLogs(
+  logs: Array<
+    RpcLogBase & {
+      args: { _sender?: `0x${string}`; _deposit?: bigint };
+    }
+  >,
+): EtherDepositLog[] {
+  return logs.flatMap((log) => {
+    const sender = log.args._sender;
+    const deposit = log.args._deposit;
+    if (!sender || deposit === undefined) return [];
+    return [
+      {
+        transactionHash: log.transactionHash,
+        blockNumber: log.blockNumber,
+        args: { _sender: sender, _deposit: deposit },
+      },
+    ];
+  });
+}
+
+export function toTokenDepositLogs(
+  logs: Array<
+    RpcLogBase & {
+      args: {
+        _sender?: `0x${string}`;
+        _tokenAddress?: `0x${string}`;
+        _amount?: bigint;
+      };
+    }
+  >,
+): TokenDepositLog[] {
+  return logs.flatMap((log) => {
+    const sender = log.args._sender;
+    const tokenAddress = log.args._tokenAddress;
+    const amount = log.args._amount;
+    if (!sender || !tokenAddress || amount === undefined) return [];
+    return [
+      {
+        transactionHash: log.transactionHash,
+        blockNumber: log.blockNumber,
+        args: {
+          _sender: sender,
+          _tokenAddress: tokenAddress,
+          _amount: amount,
+        },
+      },
+    ];
+  });
+}
+
+export function toTokenWithdrawLogs(
+  logs: Array<
+    RpcLogBase & {
+      args: {
+        _sender?: `0x${string}`;
+        _tokenAddress?: `0x${string}`;
+        _amount?: bigint;
+      };
+    }
+  >,
+): TokenWithdrawLog[] {
+  return toTokenDepositLogs(logs);
+}
+
+export function toUsdcTransferLogs(
+  logs: Array<RpcLogBase & { args: { value?: bigint } }>,
+): UsdcTransferLog[] {
+  return logs.flatMap((log) => {
+    if (log.args.value === undefined) return [];
+    return [
+      {
+        transactionHash: log.transactionHash,
+        args: { value: log.args.value },
+      },
+    ];
+  });
+}
+
 export function buildBlockRanges(
   fromBlock: bigint,
   toBlock: bigint,
@@ -75,6 +159,10 @@ export function buildBlockRanges(
   }
 
   return ranges;
+}
+
+export function newestFirstRanges(ranges: BlockRange[]): BlockRange[] {
+  return [...ranges].reverse();
 }
 
 export function addressesEqual(a: string, b: string): boolean {

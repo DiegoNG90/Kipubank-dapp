@@ -150,6 +150,10 @@ export function BankPanel() {
             <p className="mt-1 text-2xl font-semibold text-emerald-100">
               ${formatUsd(userUsdc ?? ZERO)}
             </p>
+            <p className="mt-1 text-xs text-emerald-500/70">
+              Credited in the KipuBank vault — USDC leaves MetaMask when you
+              deposit.
+            </p>
           </div>
         )}
       </CardContent>

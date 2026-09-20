@@ -21,7 +21,9 @@ import {
   formatRelativeTime,
   type HistoryEntry,
 } from "@/lib/tx-history";
-import { etherscanTxUrl } from "@/lib/sanitize";
+import { etherscanAddressUrl, etherscanTxUrl } from "@/lib/sanitize";
+import { getKipuBankAddress } from "@/lib/constants";
+import { HISTORY_TIMEOUT_MESSAGE } from "@/hooks/use-tx-history";
 
 function HistoryIcon({ type }: { type: HistoryEntry["type"] }) {
   if (type === "withdraw") {
@@ -81,6 +83,14 @@ export function TransactionHistory() {
   const bankStats = useBankStats();
   const { usdc: usdcAddress } = mapBankStats(bankStats.data);
   const history = useTxHistory(address, usdcAddress);
+  const bankAddress = getKipuBankAddress();
+  const walletExplorerUrl = address ? etherscanAddressUrl(address) : undefined;
+  const bankExplorerUrl = bankAddress
+    ? etherscanAddressUrl(bankAddress)
+    : undefined;
+  const timedOut =
+    history.error instanceof Error &&
+    history.error.message === HISTORY_TIMEOUT_MESSAGE;
 
   return (
     <Card>
@@ -109,16 +119,62 @@ export function TransactionHistory() {
         ) : history.isError ? (
           <Alert variant="warning">
             <AlertDescription>
-              Could not load transaction history. Try again later or set{" "}
-              <code className="text-amber-200">NEXT_PUBLIC_KIPUBANK_DEPLOY_BLOCK</code>{" "}
-              if your RPC limits log ranges.
+              {timedOut ? HISTORY_TIMEOUT_MESSAGE : "Could not load transaction history."}{" "}
+              The UI reads events from the Sepolia RPC (
+              <code className="text-amber-200">eth_getLogs</code>), not from an
+              Etherscan API.{" "}
+              {walletExplorerUrl && (
+                <>
+                  Check your wallet on{" "}
+                  <a
+                    href={walletExplorerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:underline"
+                  >
+                    Etherscan
+                  </a>
+                  .
+                </>
+              )}
             </AlertDescription>
           </Alert>
         ) : !history.data?.length ? (
           <Alert>
             <AlertDescription>
               No KipuBank deposits or withdrawals found for this wallet in the
-              scanned block range.
+              scanned block range. This list is built from contract events on
+              your Sepolia RPC — it is not an Etherscan transaction scanner.
+              Older activity may sit outside the scan window.
+              {walletExplorerUrl && (
+                <>
+                  {" "}
+                  Verify on{" "}
+                  <a
+                    href={walletExplorerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:underline"
+                  >
+                    your Etherscan address
+                  </a>
+                  {bankExplorerUrl && (
+                    <>
+                      {" "}
+                      or the{" "}
+                      <a
+                        href={`${bankExplorerUrl}#events`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-400 hover:underline"
+                      >
+                        contract events
+                      </a>
+                    </>
+                  )}
+                  .
+                </>
+              )}
             </AlertDescription>
           </Alert>
         ) : (

@@ -6,7 +6,11 @@ import {
   filterDepositsBySender,
   formatHistoryTypeLabel,
   formatRelativeTime,
+  newestFirstRanges,
   sortHistoryDesc,
+  toEtherDepositLogs,
+  toTokenDepositLogs,
+  toUsdcTransferLogs,
 } from "@/lib/tx-history";
 
 const user = "0x94880bC1361cd7723E55eE9c7bCce319fa2F93e4" as const;
@@ -27,6 +31,48 @@ describe("buildBlockRanges", () => {
 
   it("returns an empty array for invalid input", () => {
     expect(buildBlockRanges(10n, 5n, 5_000n)).toEqual([]);
+  });
+
+  it("reverses ranges so the newest blocks are scanned first", () => {
+    expect(newestFirstRanges(buildBlockRanges(0n, 12_000n, 5_000n))).toEqual([
+      { from: 10_000n, to: 12_000n },
+      { from: 5000n, to: 9999n },
+      { from: 0n, to: 4999n },
+    ]);
+  });
+});
+
+describe("rpc log mappers", () => {
+  it("drops logs with missing decoded args", () => {
+    expect(
+      toEtherDepositLogs([
+        {
+          transactionHash: tx1,
+          blockNumber: 1n,
+          args: { _sender: user },
+        },
+        {
+          transactionHash: tx2,
+          blockNumber: 2n,
+          args: { _sender: user, _deposit: 1n },
+        },
+      ]),
+    ).toHaveLength(1);
+    expect(
+      toTokenDepositLogs([
+        {
+          transactionHash: tx1,
+          blockNumber: 1n,
+          args: { _sender: user, _amount: 1n },
+        },
+      ]),
+    ).toHaveLength(0);
+    expect(
+      toUsdcTransferLogs([
+        { transactionHash: tx1, blockNumber: 1n, args: {} },
+        { transactionHash: tx2, blockNumber: 2n, args: { value: 5n } },
+      ]),
+    ).toEqual([{ transactionHash: tx2, args: { value: 5n } }]);
   });
 });
 
