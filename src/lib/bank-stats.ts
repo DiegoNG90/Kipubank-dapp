@@ -41,3 +41,16 @@ export function calculateCapacityPct(
   if (!bankCap || totalDeposits === undefined || bankCap <= ZERO) return 0;
   return Number((totalDeposits * BPS_BASE) / bankCap) / 100;
 }
+
+export function calculateRemainingCapacity(
+  bankCap: bigint | undefined,
+  totalDeposits: bigint | undefined,
+): bigint {
+  if (!bankCap || totalDeposits === undefined) return ZERO;
+  if (totalDeposits >= bankCap) return ZERO;
+  return bankCap - totalDeposits;
+}
+
+export function isCapacityNearFull(capacityPct: number, threshold = 90): boolean {
+  return capacityPct >= threshold;
+}

@@ -15,6 +15,14 @@ const wagmiState = {
   error: null as Error | null,
 };
 
+const availabilityState = {
+  value: "installed" as "installed" | "not-installed" | "detecting",
+};
+
+vi.mock("@/hooks/use-wallet-availability", () => ({
+  useWalletAvailability: () => availabilityState.value,
+}));
+
 vi.mock("wagmi", () => ({
   useAccount: () => ({
     address: wagmiState.address,
@@ -37,6 +45,7 @@ describe("ConnectWallet", () => {
     wagmiState.isConnected = false;
     wagmiState.isPending = false;
     wagmiState.error = null;
+    availabilityState.value = "installed";
     delete (window as Window & { ethereum?: unknown }).ethereum;
   });
 
@@ -69,17 +78,40 @@ describe("ConnectWallet", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("connects when a wallet is injected even if it is not flagged as MetaMask", async () => {
-    const user = userEvent.setup();
-    setEthereum({ isMetaMask: true, isBraveWallet: true });
+  it("shows guidance when MetaMask is detected but not opened", () => {
+    availabilityState.value = "installed";
     render(<ConnectWallet />);
 
-    await user.click(screen.getByRole("button", { name: /connect metamask/i }));
+    expect(
+      screen.getByText(/MetaMask detectada/i),
+    ).toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(connect).toHaveBeenCalled();
-    });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  it("opens the wallet guide when the provider is missing after install", async () => {
+    wagmiState.error = new Error("Provider not found");
+    render(<ConnectWallet />);
+
+    expect(
+      await screen.findByRole("dialog", { name: /abrí metamask para conectar/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/ícono de MetaMask/i)).toBeInTheDocument();
+  });
+
+  it("shows a pending-request warning for -32002 errors", () => {
+    wagmiState.error = {
+      name: "ProviderRpcError",
+      message: "Request of type eth_requestAccounts already pending",
+      code: -32002,
+    } as Error & { code: number };
+
+    render(<ConnectWallet />);
+
+    expect(
+      screen.getByText(/Ya hay una solicitud abierta en MetaMask/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: /abrí metamask para conectar/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the truncated address and disconnects when already connected", async () => {
@@ -91,15 +123,6 @@ describe("ConnectWallet", () => {
     expect(screen.getByText(/0x94880b/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /disconnect/i }));
     expect(disconnect).toHaveBeenCalled();
-  });
-
-  it("shows a friendly hint when the provider is missing", () => {
-    wagmiState.error = new Error("Provider not found");
-    render(<ConnectWallet />);
-
-    expect(
-      screen.getByText(/No se encontró un provider/i),
-    ).toBeInTheDocument();
   });
 
   it("shows connecting state while detection or connect is pending", () => {

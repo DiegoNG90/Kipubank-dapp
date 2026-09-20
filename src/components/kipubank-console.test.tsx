@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KipuBankConsole } from "@/components/kipubank-console";
 import { renderWithProviders } from "@/test/render";
 
+vi.mock("@/hooks/use-wallet-availability", () => ({
+  useWalletAvailability: () => "installed" as const,
+}));
+
 vi.mock("@/hooks/use-kipubank", () => ({
   useIsConfigured: () => true,
   useBankStats: () => ({
@@ -43,6 +47,7 @@ describe("KipuBankConsole", () => {
     expect(screen.getByText("Deposit ETH")).toBeInTheDocument();
     expect(screen.getByText("Deposit ERC-20")).toBeInTheDocument();
     expect(screen.getByText("Withdraw USDC")).toBeInTheDocument();
+    expect(screen.getByText(/Your transaction history/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /connect metamask/i }),
     ).toBeInTheDocument();

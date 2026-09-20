@@ -107,6 +107,40 @@ export const kipuBankAbi = [
     stateMutability: "view",
   },
   {
+    type: "event",
+    name: "SuccessfulEtherDeposit",
+    inputs: [
+      { name: "_sender", type: "address", indexed: false },
+      { name: "_deposit", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "SuccessfulTokenDeposit",
+    inputs: [
+      { name: "_sender", type: "address", indexed: false },
+      { name: "_tokenAddress", type: "address", indexed: false },
+      { name: "_amount", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "SuccessfulTokenWithdrawal",
+    inputs: [
+      { name: "_sender", type: "address", indexed: true },
+      { name: "_tokenAddress", type: "address", indexed: true },
+      { name: "_amount", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "SuccessfulEtherWithdrawal",
+    inputs: [
+      { name: "_sender", type: "address", indexed: true },
+      { name: "_amount", type: "uint256", indexed: false },
+    ],
+  },
+  {
     type: "error",
     name: "InvalidAmount",
     inputs: [],

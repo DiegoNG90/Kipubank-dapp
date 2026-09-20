@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calculateCapacityPct, mapBankStats } from "@/lib/bank-stats";
+import {
+  calculateCapacityPct,
+  calculateRemainingCapacity,
+  isCapacityNearFull,
+  mapBankStats,
+} from "@/lib/bank-stats";
 
 describe("mapBankStats", () => {
   it("maps contract read rows to named fields", () => {
@@ -44,5 +49,29 @@ describe("calculateCapacityPct", () => {
   it("returns zero when bank cap is missing or zero", () => {
     expect(calculateCapacityPct(undefined, 1n)).toBe(0);
     expect(calculateCapacityPct(0n, 1n)).toBe(0);
+  });
+});
+
+describe("calculateRemainingCapacity", () => {
+  it("returns the difference between cap and deposits", () => {
+    expect(calculateRemainingCapacity(10_000_000n, 2_500_000n)).toBe(
+      7_500_000n,
+    );
+  });
+
+  it("returns zero when deposits meet or exceed cap", () => {
+    expect(calculateRemainingCapacity(10_000_000n, 10_000_000n)).toBe(0n);
+    expect(calculateRemainingCapacity(10_000_000n, 11_000_000n)).toBe(0n);
+  });
+
+  it("returns zero when cap is missing", () => {
+    expect(calculateRemainingCapacity(undefined, 1n)).toBe(0n);
+  });
+});
+
+describe("isCapacityNearFull", () => {
+  it("flags usage at or above the threshold", () => {
+    expect(isCapacityNearFull(90)).toBe(true);
+    expect(isCapacityNearFull(89.9)).toBe(false);
   });
 });
