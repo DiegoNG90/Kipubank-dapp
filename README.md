@@ -33,7 +33,7 @@ Do **not** use `0x078dEbfbFC8C2764c561Bd636D833Cc569FDb3B2`. That instance was d
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22.23.4 (see `.node-version`)
 - npm
 - [MetaMask](https://metamask.io/) in **Chrome, Brave, or Firefox** (the Cursor/VS Code preview has no extensions)
 - Sepolia ETH for gas ([Alchemy faucet](https://www.alchemy.com/faucets/ethereum-sepolia) or [Google Cloud faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia))

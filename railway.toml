@@ -1,5 +1,6 @@
 [build]
-builder = "RAILPACK"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "npm start -- --hostname 0.0.0.0"
